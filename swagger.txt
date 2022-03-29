@@ -1,0 +1,238 @@
+openapi: "3.0.2"
+
+info:
+  title: "GestionClientes API"
+  description: "Api que permite acceder a los **clientes**."
+  version: "1.0"
+  termsOfService: "https://url_a_los_terminos.org"
+  contact:
+    name: "Gestionclientes"
+    url: "https://gestionclientes.org/api"
+    email: "correo@gmail.com"
+  license:
+    name: "licencia"
+    url: "https://url_a_la_licencia.org"
+
+servers:
+  - url: https://url_produccion
+    description: "Servidor de producción"
+  - url: http://url_integracion
+    description: "Servidor de integración"
+  - url: http://localhost:8090
+    description: "Servidor local"
+
+components:
+
+  parameters:
+    id:
+      name: id
+      in: path
+      description: "id del recurso a buscar"
+      schema:
+        type: integer
+      required: true
+
+  schemas:
+    respuesta:
+      type: object
+      properties:
+        status:
+          type: string
+          description: "status http de la respuesta"
+    error:
+      type: object
+      properties:
+        codigoError:
+          type: integer
+        mensaje:
+          type: string
+        detalles:
+          type: object          
+    datos:
+      type: object
+      properties:
+        descripcion:
+          type: string
+        valor:
+          type: object
+
+    cliente:
+      title: Cliente
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "Id cliente"
+        nombre:
+          type: string
+          description: "Nombre del cliente"
+        direccion:
+          type: string
+          description: "Dirección del cliente"
+        telefono:
+          type: string
+          description: "Teléfono del cliente"
+    arrayClientes:
+      type: array
+      items: 
+        $ref: '#/components/schemas/cliente'
+        
+    clienteSinId:
+      title: Cliente sin id
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: "Nombre del cliente"
+        direccion:
+          type: string
+          description: "Dirección del cliente"
+        telefono:
+          type: string
+          description: "Teléfono del cliente"      
+
+  responses:
+    400_BAD_REQUEST:
+      description: Error en la peticion
+      content:
+        application/json:
+          schema:
+            allOf:     
+            - $ref: '#/components/schemas/respuesta'
+            - type: object
+              properties:
+                error:
+                  $ref: '#/components/schemas/error'  
+                  
+    404_NOT_FOUND:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            allOf:     
+            - $ref: '#/components/schemas/respuesta'
+            - type: object
+              properties:
+                error:
+                  $ref: '#/components/schemas/error'                    
+
+    500_INTERNAL_SERVER_ERROR:
+      description: Error al procesar la petición
+      content:
+        application/json:
+          schema:
+            allOf:     
+            - $ref: '#/components/schemas/respuesta'
+            - type: object
+              properties:
+                error:
+                  $ref: '#/components/schemas/error' 
+
+paths:
+  /clientes:
+    get:
+      summary: Lista clientes utilizando un criterio para el filtrado de resultados
+      responses:
+        200:
+          description: Petición procesada correctamente
+          content:
+            application/json:
+              schema:
+                allOf:     
+                - $ref: '#/components/schemas/respuesta'
+                - type: object
+                  properties:
+                    datos:     
+                      allOf: 
+                        - $ref: '#/components/schemas/datos'
+                        - type: object
+                          properties:
+                            valor:
+                              $ref: '#/components/schemas/arrayClientes'
+        400:
+           $ref: '#/components/responses/400_BAD_REQUEST'
+        500:
+           $ref: '#/components/responses/500_INTERNAL_SERVER_ERROR'
+
+    post:
+      summary: Inserta un cliente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clienteSinId'
+      responses:
+        201:
+          description: Cliente insertado correctamente
+          content:
+            application/json:
+              schema:
+                allOf:     
+                - $ref: '#/components/schemas/respuesta'
+                - type: object
+                  properties:
+                    datos:     
+                      allOf: 
+                        - $ref: '#/components/schemas/datos'
+                        - type: object
+                          properties:
+                            valor:
+                              $ref: '#/components/schemas/cliente'
+        400:
+           $ref: '#/components/responses/400_BAD_REQUEST'
+        500:
+           $ref: '#/components/responses/500_INTERNAL_SERVER_ERROR'
+
+  /clientes/{id}:
+    get:
+      summary: "Busca un cliente por su identificador (id)"
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        200:
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                allOf:     
+                - $ref: '#/components/schemas/respuesta'
+                - type: object
+                  properties:
+                    datos:     
+                      allOf: 
+                        - $ref: '#/components/schemas/datos'
+                        - type: object
+                          properties:
+                            valor:
+                              $ref: '#/components/schemas/cliente'
+        404:
+           $ref: '#/components/responses/404_NOT_FOUND'
+        500:
+           $ref: '#/components/responses/500_INTERNAL_SERVER_ERROR'
+           
+    delete:
+      summary: "Elimina un cliente por su identificador (id)"
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        200:
+          description: Cliente eliminado
+          content:
+            application/json:
+              schema:
+                allOf:     
+                - $ref: '#/components/schemas/respuesta'
+                - type: object
+                  properties:
+                    datos:     
+                      allOf: 
+                        - $ref: '#/components/schemas/datos'
+                        - type: object
+                          properties:
+                            valor:
+                              $ref: '#/components/schemas/cliente'
+        404:
+           $ref: '#/components/responses/404_NOT_FOUND'
+        500:
+           $ref: '#/components/responses/500_INTERNAL_SERVER_ERROR'           
